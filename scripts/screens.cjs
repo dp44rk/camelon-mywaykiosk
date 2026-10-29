@@ -16,7 +16,7 @@ const OUT = process.env.OUT || require('path').join(__dirname, '..', 'docs', 'im
   const phoneCtx = ctx; // 같은 컨텍스트여야 BroadcastChannel이 통한다
   const phone = await phoneCtx.newPage();
   await phone.setViewportSize({ width: 390, height: 844 });
-  await phone.goto(`${BASE}/?demo=1&k=cafe-01`);
+  await phone.goto(`${BASE}/app/?demo=1&k=cafe-01`);
   await phone.evaluate(() => (window.__muted = true));
   await phone.waitForTimeout(500);
   const shot = async (p, name, opts = {}) => p.screenshot({ path: OUT + name + '.png', ...opts });
