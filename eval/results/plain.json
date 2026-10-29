@@ -1,0 +1,141 @@
+{
+ "made": "2026-10-29T11:57:26.131Z",
+ "original": {
+  "samples": 69,
+  "words": 562,
+  "hardWords": 164,
+  "hardPer100": 29.2,
+  "avgWordsPerSentence": 1.44,
+  "maxWordsPerSentence": 4,
+  "actionsPerUtterance": 0,
+  "shortSentenceRate": 100,
+  "checkPass": null
+ },
+ "ours": {
+  "first": {
+   "samples": 69,
+   "words": 1054,
+   "hardWords": 0,
+   "hardPer100": 0,
+   "avgWordsPerSentence": 3.57,
+   "maxWordsPerSentence": 6,
+   "actionsPerUtterance": 0.93,
+   "shortSentenceRate": 100,
+   "checkPass": 100
+  },
+  "some": {
+   "samples": 69,
+   "words": 836,
+   "hardWords": 0,
+   "hardPer100": 0,
+   "avgWordsPerSentence": 3.6,
+   "maxWordsPerSentence": 6,
+   "actionsPerUtterance": 0.93,
+   "shortSentenceRate": 100,
+   "checkPass": 100
+  },
+  "often": {
+   "samples": 69,
+   "words": 460,
+   "hardWords": 0,
+   "hardPer100": 0,
+   "avgWordsPerSentence": 4.89,
+   "maxWordsPerSentence": 8,
+   "actionsPerUtterance": 0.93,
+   "shortSentenceRate": 100,
+   "checkPass": 100
+  }
+ },
+ "examples": [
+  {
+   "screen": "dine",
+   "shown": [
+    "처음으로",
+    "직원 호출",
+    "Eat in",
+    "Take out"
+   ],
+   "say": "먹을 곳을 고르는 화면이에요. 화면 오른쪽 가운데에 네모가 있어요. 영어로 '테이크 아웃'이라고 써 있어요. 가지고 가기라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "option",
+   "shown": [
+    "HOT",
+    "ICE",
+    "Regular",
+    "Large",
+    "기본",
+    "+1샷"
+   ],
+   "say": "맛과 크기를 고르는 화면이에요. 화면 오른쪽 위에 네모가 있어요. 영어로 '아이스'라고 써 있어요. 차가운 것이라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "option",
+   "shown": [
+    "HOT",
+    "ICE",
+    "Regular",
+    "Large",
+    "기본",
+    "+1샷"
+   ],
+   "say": "맛과 크기를 고르는 화면이에요. 화면 오른쪽 위에 네모가 있어요. 영어로 '아이스'라고 써 있어요. 차가운 것이라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "dine",
+   "shown": [
+    "처음으로",
+    "직원 호출",
+    "Eat in",
+    "Take out"
+   ],
+   "say": "먹을 곳을 고르는 화면이에요. 화면 왼쪽 가운데에 네모가 있어요. 영어로 '이트 인'이라고 써 있어요. 여기서 먹기라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "option",
+   "shown": [
+    "HOT",
+    "ICE",
+    "Regular",
+    "Large",
+    "기본",
+    "+1샷"
+   ],
+   "say": "맛과 크기를 고르는 화면이에요. 화면 왼쪽 위에 네모가 있어요. 영어로 '핫'이라고 써 있어요. 따뜻한 것이라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "option",
+   "shown": [
+    "HOT",
+    "ICE",
+    "Regular",
+    "Large",
+    "기본",
+    "+1샷"
+   ],
+   "say": "맛과 크기를 고르는 화면이에요. 화면 왼쪽 위에 네모가 있어요. 영어로 '핫'이라고 써 있어요. 따뜻한 것이라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "dine",
+   "shown": [
+    "처음으로",
+    "직원 호출",
+    "Eat in",
+    "Take out"
+   ],
+   "say": "먹을 곳을 고르는 화면이에요. 화면 오른쪽 가운데에 네모가 있어요. 영어로 '테이크 아웃'이라고 써 있어요. 가지고 가기라는 뜻이에요. 그걸 누르세요."
+  },
+  {
+   "screen": "menu",
+   "shown": [
+    "처음으로",
+    "직원 호출",
+    "COFFEE",
+    "NON-COFFEE",
+    "TEA",
+    "DESSERT"
+   ],
+   "say": "메뉴를 고르는 화면이에요. 화면 왼쪽 위에 네모가 있어요. 영어로 '커피'라고 써 있어요. 그걸 누르세요."
+  }
+ ]
+}
