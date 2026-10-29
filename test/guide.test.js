@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plan, speak, won } from '../server/lib/guide.js';
+import { plan, speak, won, signature } from '../server/lib/guide.js';
 import { normalizeScreen } from '../server/lib/vision.js';
 import { check, simplify, hardWords, josa, glossFor } from '../server/lib/plain.js';
 import { gridName, colorName } from '../server/lib/layout.js';
@@ -83,7 +83,7 @@ test('권유 창은 거절 버튼으로', () => {
 });
 
 test('같은 화면이 계속되면 막힘 → 3번이면 도움', () => {
-  const st = { lastSig: 'dine|Eat in,Take out', lastAction: 'press' };
+  const st = { lastSig: signature(dine), lastAction: 'press' };
   const p1 = plan(dine, st, {});
   assert.equal(p1.action, 'stuck');
   const p3 = plan(dine, { ...st, stuck: 2 }, {});
@@ -113,4 +113,13 @@ test('목표 규칙 해석·되묻기', () => {
   assert.equal(g.items[0].temp, 'ice');
   assert.equal(g.place, 'takeout');
   assert.equal(confirmText(g), '차가운 아메리카노 한 잔, 가지고 가기. 맞아요?');
+});
+
+test('엑스 표시·같은 칸 순서', () => {
+  const ad = normalizeScreen({ type: 'ad', els: [{ id: 1, t: '✕', k: 'close', b: [900, 300, 950, 340] }], pick: 1, conf: 0.9 });
+  const o = speak({ plan: plan(ad, {}, {}), screen: ad, profile: {} });
+  assert.match(o.utterance, /'엑스' 표시가 있어요/);
+  const two = normalizeScreen({ type: 'option', els: [{ id: 1, t: 'HOT', k: 'btn', b: [700, 100, 800, 200] }, { id: 2, t: 'ICE', k: 'btn', b: [850, 100, 950, 200] }], pick: 2, conf: 0.9 });
+  const o2 = speak({ plan: plan(two, {}, {}), screen: two, profile: {} });
+  assert.match(o2.utterance, /오른쪽 위, 왼쪽에서 두 번째/);
 });

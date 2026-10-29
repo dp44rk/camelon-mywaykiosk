@@ -30,7 +30,25 @@ export function gridName(box, screen) {
   return { name: `${H[col]} ${V[row]}`, row, col };
 }
 
-/** 같은 열에 비슷한 버튼이 3개 이상이면 "위에서 N번째" */
+/** 같은 칸(9칸)에 같은 종류가 2개 이상일 때만 "위에서 N번째" — 진짜 헷갈릴 때만 말한다 */
+export function ordinalInCell(target, others, screen) {
+  const g = gridName(target.box, screen).name;
+  const same = others.filter((o) => o.box && gridName(o.box, screen).name === g);
+  if (!same.some((o) => o.id === target.id)) same.push(target);
+  if (same.length < 2) return null;
+  const rows = same.slice().sort((a, b) => a.box[1] - b.box[1]);
+  // 같은 줄(세로 겹침)에 있으면 왼쪽/오른쪽으로
+  const rowMates = same.filter((o) => overlap1d(o.box[1], o.box[3], target.box[1], target.box[3]) > 0.5 * (target.box[3] - target.box[1]));
+  if (rowMates.length === same.length) {
+    const xs = rowMates.sort((a, b) => a.box[0] - b.box[0]);
+    const i = xs.findIndex((o) => o.id === target.id) + 1;
+    return `왼쪽에서 ${KOR_ORD[i] || i + '번째'}`;
+  }
+  const i = rows.findIndex((o) => o.id === target.id) + 1;
+  return `위에서 ${KOR_ORD[i] || i + '번째'}`;
+}
+
+/** (예전 방식) 같은 열에 3개 이상이면 "위에서 N번째" */
 export function ordinalInColumn(target, others) {
   const tx1 = target.box[0], tx2 = target.box[2];
   const col = others.filter((o) => o.box && overlap1d(tx1, tx2, o.box[0], o.box[2]) > 0.5 * Math.min(tx2 - tx1, o.box[2] - o.box[0]));
@@ -78,8 +96,8 @@ export function cssColorName(css) {
   if (!css) return null;
   let m = String(css).match(/^#?([0-9a-f]{6})$/i);
   if (m) { const n = parseInt(m[1], 16); return colorName(n >> 16, (n >> 8) & 255, n & 255); }
-  m = String(css).match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
-  if (m) return colorName(+m[1], +m[2], +m[3]);
+  m = String(css).match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+))?/i);
+  if (m) { if (m[4] !== undefined && Number(m[4]) < 0.5) return null; return colorName(+m[1], +m[2], +m[3]); }
   return null;
 }
 
@@ -112,7 +130,7 @@ export function boxColor(img, box) {
 /** 위치 문장 조각: "화면 오른쪽 위에 노란 네모가 있어요." */
 export function describePlace({ target, others = [], screen, color, bgColor }) {
   const g = gridName(target.box, screen);
-  const ord = ordinalInColumn(target, others);
+  const ord = ordinalInCell(target, others, screen);
   const where = ord ? `화면 ${g.name}, ${ord}` : `화면 ${g.name}`;
   const showColor = color && color !== bgColor && color !== '회색';
   const thing = showColor ? `${color} 네모` : '네모';

@@ -28,7 +28,8 @@ const RETAKE = {
 };
 
 export function signature(screen) {
-  return screen.type + '|' + screen.els.map((e) => e.t).slice(0, 6).sort().join(',');
+  // 선택 상태·합계까지 넣어야 "골랐는데 그대로"를 막힘으로 오해하지 않는다
+  return screen.type + '|' + (screen.total ?? '') + '|' + screen.els.map((e) => e.t + (e.sel ? '*' : '')).sort().join(',');
 }
 
 const num = new Intl.NumberFormat('ko-KR');
@@ -44,9 +45,14 @@ export function won(n) {
   return (s || '0') + ' 원';
 }
 
+// 여러 개면 글자가 있고 큰 버튼을 고른다 ('✕'보다 '닫기')
 function find(screen, kinds) {
-  return screen.els.find((e) => kinds.includes(e.k));
+  const c = screen.els.filter((e) => kinds.includes(e.k));
+  const area = (e) => (e.box[2] - e.box[0]) * (e.box[3] - e.box[1]) * (isSymbol(e.t) ? 0.2 : 1);
+  return c.sort((a, b) => area(b) - area(a))[0];
 }
+export function isSymbol(t) { return /^[\s✕×xX✖︎<>◀▶←→+−\-]+$/.test(String(t || '')); }
+const SYMBOL_NAME = { '✕': '엑스', '×': '엑스', x: '엑스', X: '엑스', '✖': '엑스', '◀': '왼쪽 화살표', '<': '왼쪽 화살표', '←': '왼쪽 화살표', '▶': '오른쪽 화살표', '>': '오른쪽 화살표', '→': '오른쪽 화살표', '+': '더하기', '−': '빼기', '-': '빼기' };
 
 /**
  * plan(screen, state, profile) → { action, target, reason }
@@ -73,8 +79,10 @@ export function plan(screen, state = {}, profile = {}) {
     target = find(screen, ['skip', 'no', 'close']) || target;
   }
   // 결제: 확인 전에는 절대 결제 버튼을 안내하지 않음
-  const isPay = screen.type === 'pay_method' || screen.type === 'pay_card' || target?.k === 'pay';
+  // 돈이 실제로 나가는 곳(결제 수단·카드 넣기) 전에 반드시 확인
+  const isPay = screen.type === 'pay_method' || screen.type === 'pay_card' || (screen.type === 'cart' && target?.k === 'pay');
   if (isPay && !state.payConfirmed) return { action: 'confirm_pay', target, sig };
+  if (screen.type === 'pay_card') return { action: 'insert_card', sig };
 
   if (!target || screen.conf < 0.35) {
     const unsure = (state.unsure || 0) + 1;
@@ -122,6 +130,13 @@ export function speak({ plan: p, screen, img, profile = {}, state = {} }) {
     out.display = { big: '주문 끝!', sub: screen.no ? `주문 번호 ${screen.no}번` : '' };
     return finish(out, { ...limits, maxActions: 1, maxSentences: 4 });
   }
+  if (p.action === 'insert_card') {
+    out.lines.push('카드를 넣는 화면이에요.');
+    out.lines.push('화면 아래 구멍에 카드를 꽂으세요.');
+    out.lines.push('끝날 때까지 그대로 두세요.');
+    out.display = { big: '카드를 꽂으세요', sub: '화면 아래 구멍 · 끝날 때까지 그대로' };
+    return finish(out, { ...limits, maxSentences: 4 });
+  }
   if (p.action === 'unsure') {
     out.lines.push('잘 모르겠어요.');
     out.lines.push('화면 전체가 나오게 다시 찍어 주세요.');
@@ -156,10 +171,12 @@ export function speak({ plan: p, screen, img, profile = {}, state = {} }) {
     return finish(out, { ...limits, maxSentences: 4 });
   }
 
-  const label = t.r || t.t;
-  const english = /[A-Za-z]/.test(t.t) && !/[가-힣]/.test(t.t);
-  const gloss = glossFor(t.t) || glossFor(t.r) || cleanMeaning(screen.mean, label);
-  const place = describePlace({ target: t, others, screen: screen.screen, color, bgColor });
+  const symbol = isSymbol(t.t);
+  const label = symbol ? SYMBOL_NAME[t.t.trim()] || '표시' : t.r || t.t;
+  const english = !symbol && /[A-Za-z]/.test(t.t) && !/[가-힣]/.test(t.t);
+  const short = label.split(/\s+/).length <= 3;
+  const gloss = !short || symbol ? null : glossFor(t.t) || glossFor(t.r) || cleanMeaning(screen.mean, label);
+  const place = describePlace({ target: t, others: others.filter((o) => o.k === t.k), screen: screen.screen, color, bgColor });
 
   if (p.action === 'stuck') {
     out.lines.push('화면이 그대로예요.');
@@ -172,15 +189,18 @@ export function speak({ plan: p, screen, img, profile = {}, state = {} }) {
       if (sit.text) out.lines.push(sit.text);
       out.situation = sit;
     }
-    out.lines.push(place.sentence);
-    out.lines.push(`${english ? '영어로 ' : ''}'${label}'${josa(label, '이라고/라고')} 써 있어요.`);
+    if (symbol) out.lines.push(`${place.where}에 '${label}' 표시가 있어요.`);
+    else {
+      out.lines.push(place.sentence);
+      out.lines.push(`${english ? '영어로 ' : ''}'${label}'${josa(label, '이라고/라고')} 써 있어요.`);
+    }
     if (gloss && detail === 'full') out.lines.push(`${gloss}${josa(gloss, '이라는/라는')} 뜻이에요.`);
     out.lines.push('그걸 누르세요.');
   }
   out.target = pubTarget(t);
   out.place = { grid: place.grid.name, ordinal: place.ordinal, color };
   out.display = { big: `'${label}' 누르기`, sub: `${place.where}${color ? ' · ' + color + ' 네모' : ''}`, gloss };
-  return finish(out, { ...limits, maxSentences: 5 });
+  return finish(out, { ...limits, maxSentences: 6 });
 }
 
 function cleanMeaning(mean, label) {

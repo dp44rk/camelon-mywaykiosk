@@ -51,7 +51,7 @@ export function normalizeScreen(raw) {
     conf: Math.max(0, Math.min(1, Number(raw?.conf ?? 0.5))),
   };
   const seen = new Set();
-  for (const e of Array.isArray(raw?.els) ? raw.els.slice(0, 14) : []) {
+  for (const e of Array.isArray(raw?.els) ? raw.els.slice(0, 40) : []) {
     const box = clampBox(e?.b);
     const id = Number(e?.id);
     if (!box || !Number.isFinite(id) || seen.has(id)) continue;
