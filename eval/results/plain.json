@@ -1,10 +1,10 @@
 {
- "made": "2026-10-29T12:09:38.103Z",
+ "made": "2026-10-29T12:17:32.226Z",
  "original": {
   "samples": 69,
   "words": 562,
-  "hardWords": 278,
-  "hardPer100": 49.5,
+  "hardWords": 283,
+  "hardPer100": 50.4,
   "avgWordsPerSentence": 1.44,
   "maxWordsPerSentence": 4,
   "actionsPerUtterance": 0,
