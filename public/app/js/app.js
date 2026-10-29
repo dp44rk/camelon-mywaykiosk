@@ -3,6 +3,11 @@ import * as P from './profile.js';
 import * as V from './voice.js';
 import * as Cam from './camera.js';
 import { api } from './api.js';
+import { animate, stagger } from '../../vendor/anime/anime.esm.min.js';
+
+// 움직임은 짧게, 안내가 바뀐 걸 알아채는 정도만. 움직임 줄이기 설정이면 끈다.
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motion = (t, p) => { if (!REDUCE && t) try { animate(t, p); } catch {} };
 
 const $ = (s) => document.querySelector(s);
 const qs = new URLSearchParams(location.search);
@@ -18,11 +23,13 @@ const app = {
   demo: null,          // 체험 모드 제공자 (demo.js)
 };
 window.__app = app;
+window.__go = (n) => go(n); // 시험용
 
 // ---------- 화면 전환 ----------
 function go(name) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.dataset.view === name));
   window.scrollTo(0, 0);
+  motion(`#v-${name} > *`, { opacity: [0, 1], translateY: [16, 0], duration: 420, delay: stagger(50), ease: 'outQuart' });
   const enter = ENTER[name];
   if (enter) enter();
 }
@@ -82,6 +89,7 @@ function showQ() {
     };
     box.appendChild(b);
   });
+  motion('#setup-c .blk', { opacity: [0, 1], translateX: [-24, 0], duration: 450, delay: stagger(70), ease: 'outQuart' });
   V.say(q.speak);
 }
 function applyDraft() { V.setRate(draft.rate); document.documentElement.classList.toggle('low', draft.vision === 'low'); }
@@ -107,7 +115,7 @@ function enterQr() {
 }
 
 // ---------- 목표 ----------
-const CHIPS = ['차가운 아메리카노 한 잔 가져갈게', '따뜻한 카페라떼 한 잔 먹고 갈게', '김치찌개 하나 먹고 갈게', '돌솥비빔밥 하나 포장'];
+const CHIPS = ['차가운 아메리카노 하나 포장', '따뜻한 카페라떼 하나 먹고 갈게', '김치찌개 하나 먹고 갈게', '비빔밥 하나 포장'];
 function enterGoal() {
   $('#goal-heard').textContent = '';
   $('#goal-chips').innerHTML = CHIPS.map((c) => `<button>${c}</button>`).join('');
@@ -167,6 +175,7 @@ async function enterGuide() {
 function setInstr(big, small = '', cls = '') {
   $('#instr-big').innerHTML = big; $('#instr-sub').textContent = small;
   $('#instr').className = 'instr ' + cls;
+  motion('#instr-big', { opacity: [0.2, 1], translateY: [10, 0], duration: 320, ease: 'outQuart' });
 }
 
 $('#shutter').onclick = () => { V.unlock(); shoot(); };
@@ -220,6 +229,7 @@ async function step(shot, { auto = false } = {}) {
 function sayRes(r, shot) {
   const d = r.display || {};
   $('#pay-row').hidden = r.action !== 'confirm_pay';
+  if (r.action === 'confirm_pay') motion('#pay-row .blk', { opacity: [0, 1], translateY: [12, 0], duration: 350, delay: stagger(80), ease: 'outQuart' });
   const cls = r.action === 'confirm_pay' ? 'pay' : ['retake', 'unsure', 'error', 'stuck'].includes(r.action) ? 'warn' : '';
   setInstr(escapeHtml(d.big || ''), d.sub || '', cls);
   drawTarget(r, shot);
@@ -245,6 +255,7 @@ function drawTarget(r, shot) {
   const x2 = ox + (box[2] / 1000) * iw * s, y2 = oy + (box[3] / 1000) * ih * s;
   Object.assign(hl.style, { left: x1 - 6 + 'px', top: y1 - 6 + 'px', width: x2 - x1 + 12 + 'px', height: y2 - y1 + 12 + 'px' });
   void hl.offsetWidth; hl.classList.add('on');
+  motion(hl, { scale: [1.25, 1], opacity: [0, 1], duration: 450, ease: 'outBack(1.6)' });
 }
 function drawKioskSketch(r, c) {
   // 키오스크 화면 비율(9:16)로 버튼 네모들을 그린다
