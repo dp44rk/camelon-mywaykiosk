@@ -131,7 +131,7 @@ small { font-size: .62em; }
 .myway .kh { margin-top: 62px; }
 .myway .orig { display: block; font-weight: 400; opacity: .7; }
 .myway .en, .myway .fine, .myway .langs { display: none; }
-.myway .qrbadge { top: 70px; }
+.myway .qrbadge { display: none; } /* 이미 연동됨 */
 .contrast #kiosk { --kbg: #fff; --ink: #000; --muted: #333; }
 .contrast .item, .contrast .payb, .contrast .dine-b, .contrast .key { border: 4px solid #000; box-shadow: none; }
 .contrast .accent, .contrast .dine-b.take { background: #ffd400; color: #000; border: 4px solid #000; }
