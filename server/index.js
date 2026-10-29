@@ -110,7 +110,7 @@ async function handleConvert(body) {
   let out;
   if (!C.mock) {
     try {
-      const r = await chat({ kind: 'text', messages: convertPrompt(screen, body.profile), maxTokens: 1200, temperature: 0, timeoutMs: 15000 });
+      const r = await chat({ kind: 'text', messages: convertPrompt(screen, body.profile), maxTokens: 1200, temperature: 0, timeoutMs: 30000 });
       const plan = parseJsonLoose(r.text); plan.source = r.model;
       const v = validate(plan, screen);
       out = { plan: v.plan, report: v.report, source: r.model, aiMs: r.ms };
