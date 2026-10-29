@@ -16,7 +16,7 @@ export async function understandGoal(text, { mock } = {}) {
   let source = 'rule';
   if (!mock) {
     try {
-      const r = await chat({ kind: 'text', maxTokens: 300, temperature: 0, timeoutMs: 12000, messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: text }] });
+      const r = await chat({ kind: 'text', maxTokens: 300, temperature: 0, timeoutMs: 25000, messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: text }] });
       goal = parseJsonLoose(r.text);
       source = r.model;
     } catch (e) {
@@ -39,7 +39,7 @@ export async function explainTerm(term, { mock } = {}) {
   if (g) return { text: `'${term}'는 ${g}라는 뜻이에요.`, source: 'dict' };
   if (mock) return { text: `'${term}'의 뜻은 직원에게 물어보세요.`, source: 'none' };
   try {
-    const r = await chat({ kind: 'text', maxTokens: 120, temperature: 0.2, timeoutMs: 10000, messages: [{ role: 'system', content: EXPLAIN_SYS }, { role: 'user', content: term }] });
+    const r = await chat({ kind: 'text', maxTokens: 120, temperature: 0.2, timeoutMs: 25000, messages: [{ role: 'system', content: EXPLAIN_SYS }, { role: 'user', content: term }] });
     const t = simplify(r.text.trim());
     if (check(t, { maxWords: 10, maxSentences: 2, maxActions: 1 }).ok) return { text: t, source: r.model };
     return { text: t.split(/(?<=[.?!])\s/)[0], source: r.model + ':trim' };

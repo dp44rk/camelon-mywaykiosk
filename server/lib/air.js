@@ -78,7 +78,10 @@ export async function chat({ kind = 'text', messages, maxTokens = 600, temperatu
   const c = cfg();
   const m = override || c[kind];
   const url = `${c.base}/${m.endpoint}/v1/chat/completions`;
-  const body = { model: m.model, messages, max_tokens: maxTokens, temperature };
+  // 글 모델(DeepSeek-V4.1-Flash)은 답 전에 생각(reasoning)부터 길게 써서 max_tokens를 먼저 써 버린다.
+  // 생각 몫을 따로 얹어 준다. (점검: scripts/probe-text.mjs — 1200이면 생각만 하다 끝남, 4000이면 답이 나옴)
+  const pad = kind === 'text' ? Number(process.env.REASONING_TOKENS || 3000) : 0;
+  const body = { model: m.model, messages, max_tokens: maxTokens + pad, temperature };
   const tryNoThink = /qwen/i.test(m.model) && !noThinkingRejected.has(m.endpoint);
   if (tryNoThink) body.chat_template_kwargs = { enable_thinking: false };
   const t0 = Date.now();
@@ -93,6 +96,7 @@ export async function chat({ kind = 'text', messages, maxTokens = 600, temperatu
     } else throw e;
   }
   const text = j?.choices?.[0]?.message?.content ?? '';
+  if (!text && j?.choices?.[0]?.finish_reason === 'length') throw new AirError('모델이 생각하다 글자 수 한도에 걸렸어요 (REASONING_TOKENS를 늘려 보세요)', 502);
   return { text: stripThinking(text), usage: j.usage, ms: Date.now() - t0, model: m.model };
 }
 
