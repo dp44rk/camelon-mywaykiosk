@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 방식 QR — 시연</title>
+<meta name="description" content="목업 키오스크와 어르신의 폰을 나란히 놓고 내 방식 QR을 직접 해 보는 시연 페이지. 서버 없이 브라우저 안에서 동작합니다.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vendor/suit/suit.css">
+<link rel="stylesheet" href="site.css">
+<style>
+  /* 두 기기 높이를 같게(--h) 두고, 키오스크 9:16 · 폰 390:844 비율로 너비를 정한다 → 위·아래 선이 정확히 맞는다 */
+  :root { --h: min(78vh, 860px); }
+  .top { padding: 56px 0 0; }
+  .top h1 { font-size: var(--h2); line-height: 1.2; font-weight: 900; }
+  .steps { list-style: none; padding: 0; margin: 32px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gut); counter-reset: n; }
+  .steps li { background: var(--white); border: var(--line) solid var(--ink); padding: 20px 20px 20px 72px; position: relative; font-size: 16px; line-height: 1.5; min-height: 100%; }
+  .steps li::before { counter-increment: n; content: counter(n); position: absolute; left: 20px; top: 20px; width: 36px; height: 36px; display: grid; place-items: center; font-weight: 900; color: #fff; background: var(--blue); }
+  .steps li:nth-child(2)::before { background: var(--red); } .steps li:nth-child(3)::before { background: var(--yellow); color: var(--ink); } .steps li:nth-child(4)::before { background: var(--ink); }
+  .steps b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .bar { display: flex; align-items: center; gap: 12px; margin-top: 40px; padding-top: 24px; border-top: var(--line) solid var(--ink); flex-wrap: wrap; }
+  .bar .lbl { font-weight: 800; margin-right: 4px; }
+  .bar button { font: inherit; font-weight: 800; font-size: 16px; height: 44px; padding: 0 16px; border: 3px solid var(--ink); background: var(--white); cursor: pointer; }
+  .bar button.on { background: var(--yellow); }
+  .bar .sp { flex: 1; }
+  .stage { display: flex; justify-content: center; align-items: flex-start; gap: 56px; margin: 48px 0 0; }
+  .dev { display: flex; flex-direction: column; gap: 12px; }
+  .dev .cap { font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 8px; height: 24px; }
+  .dev .cap::before { content: ''; width: 14px; height: 14px; background: var(--ink); }
+  .dev.k .cap::before { background: var(--red); } .dev.p .cap::before { background: var(--blue); border-radius: 50%; }
+  .kiosk { height: var(--h); width: calc(var(--h) * 9 / 16); border: var(--line) solid var(--ink); box-shadow: 10px 10px 0 var(--ink); background: #222; }
+  .phone { height: var(--h); width: calc((var(--h) - 28px) * 390 / 844 + 28px); border-radius: 40px; padding: 14px; background: var(--ink); box-shadow: 10px 10px 0 var(--blue); }
+  .kiosk iframe, .phone iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+  .phone iframe { border-radius: 28px; }
+  .hint { text-align: center; color: var(--muted); font-size: 15px; margin-top: 32px; }
+  @media (max-width: 1000px) { .steps { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) {
+    :root { --h: 720px; }
+    .stage { flex-direction: column; align-items: center; gap: 40px; }
+    .steps { grid-template-columns: 1fr; }
+    .kiosk { width: min(calc(100vw - 32px), 405px); height: auto; aspect-ratio: 9 / 16; }
+  }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="./"><span class="marks"><i class="c"></i><i class="s"></i><i class="t"></i></span>내 방식 QR</a>
+    <nav aria-label="사이트"><a href="./">서비스 소개</a><a href="app/">폰 앱</a><a href="kiosk/">목업 키오스크</a><a href="https://github.com/dp44rk/camelon-mywaykiosk">GitHub</a></nav>
+    <a class="btn sm" href="./">← 소개로</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="top">
+    <p class="eyebrow">시연 · 서버 없이 브라우저 안에서</p>
+    <h1>폰이 말한 대로, 키오스크를 눌러 보세요.</h1>
+    <ol class="steps">
+      <li><b>내 방식 정하기</b>오른쪽 폰에서 질문 5개에 답해요. (처음 1번)</li>
+      <li><b>주문 말하기</b>예시 버튼 「차가운 아메리카노 한 잔 가져갈게」를 눌러요.</li>
+      <li><b>안내대로 누르기</b>폰에 나온 버튼을 왼쪽 키오스크에서 눌러요.</li>
+      <li><b>화면이 바뀌어요</b>연동되면 키오스크가 내 방식 화면으로 바뀌어요.</li>
+    </ol>
+    <div class="bar" role="group" aria-label="시연 조절">
+      <span class="lbl">매장</span>
+      <button data-store="cafe" class="on">카페</button>
+      <button data-store="restaurant">식당</button>
+      <span class="sp"></span>
+      <button id="mute">소리 끄기</button>
+      <button id="reset">처음부터 다시</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="dev k"><span class="cap">목업 키오스크 (가상 매장)</span><div class="kiosk"><iframe id="kf" title="목업 키오스크" allow="autoplay"></iframe></div></div>
+    <div class="dev p"><span class="cap">어르신의 폰</span><div class="phone"><iframe id="pf" title="내 방식 QR 폰 앱" allow="autoplay; microphone; camera"></iframe></div></div>
+  </div>
+  <p class="hint">시연에서는 키오스크가 규칙 변환으로 바뀌어요. AI 화면 변환·카메라 모드는 AI 서버를 켜면 동작해요. 매장·메뉴·가격은 가상이고 결제는 목업이에요.</p>
+</main>
+<footer style="margin-top:96px"><div class="wrap"><span>내 방식 QR · 2026 AI 라이프 솔루션 챌린지 출품작</span><span>글꼴 SUIT (OFL)</span></div></footer>
+<script>
+  const kf = document.getElementById('kf'), pf = document.getElementById('pf');
+  let store = 'cafe', muted = false;
+  const ids = { cafe: 'cafe-01', restaurant: 'rest-01' };
+  function load() {
+    kf.src = `kiosk/${store}.html?hub=local`;
+    pf.src = `app/?demo=1&k=${ids[store]}`;
+    pf.onload = () => { try { pf.contentWindow.__muted = muted; } catch {} };
+  }
+  document.querySelectorAll('[data-store]').forEach((b) => b.onclick = () => {
+    store = b.dataset.store;
+    document.querySelectorAll('[data-store]').forEach((x) => x.classList.toggle('on', x === b));
+    load();
+  });
+  document.getElementById('reset').onclick = load;
+  document.getElementById('mute').onclick = (e) => {
+    muted = !muted; e.target.textContent = muted ? '소리 켜기' : '소리 끄기'; e.target.classList.toggle('on', muted);
+    try { pf.contentWindow.speechSynthesis.cancel(); pf.contentWindow.__muted = muted; } catch {}
+  };
+  load();
+</script>
+</body>
+</html>

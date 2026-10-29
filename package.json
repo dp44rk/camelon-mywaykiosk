@@ -1,0 +1,26 @@
+{
+  "name": "myway-kiosk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "내 방식 QR — 아무 키오스크나 폰 카메라로 비추면 쉬운 말로 한 단계씩 안내하는 길잡이",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "tunnel": "cloudflared tunnel --url http://localhost:8787",
+    "test": "node --test test/*.test.js",
+    "eval:capture": "node eval/capture.mjs",
+    "eval:run": "node eval/run.js",
+    "eval:plain": "node eval/plain-metrics.js"
+  },
+  "dependencies": {
+    "jpeg-js": "^0.4.4"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  },
+  "license": "MIT"
+}
