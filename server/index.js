@@ -126,8 +126,8 @@ function pickForGoal(screen, goal, state) {
   switch (screen.type) {
     case 'dine': return by((e) => place === 'eatin' ? /매장|먹고|eat/i.test(e.t) : /포장|가져|take/i.test(e.t));
     case 'menu': {
-      const already = (state.history || []).some((h) => h.type === 'option' || h.type === 'upsell');
-      if (already) return by((e) => e.k === 'next' || e.k === 'pay');
+      const added = (state.history || []).filter((h) => h.type === 'option' && (h.action === 'press' || h.action === 'stuck') && /담기|이걸로/.test(h.target || '')).length;
+      if (added >= Math.max(1, (goal?.items || []).length)) return by((e) => e.k === 'pay' || e.k === 'next');
       const hit = by((e) => e.k === 'item' && names.some((n) => norm(e.t).includes(norm(n)) || norm(n).includes(norm(e.t))));
       if (hit !== null) return hit;
       return by((e) => e.k === 'tab' && /커피|coffee|음료|식사|메인/i.test(e.t));
