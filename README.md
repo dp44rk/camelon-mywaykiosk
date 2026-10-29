@@ -77,6 +77,7 @@ node scripts/build-pages.mjs && npx http-server dist   # 시연 페이지 묶음
 - [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT) — 프로필·키오스크 QR
 - [jpeg-js](https://github.com/jpeg-js/jpeg-js) (BSD-3) — 버튼 색 계산
 - [SUIT](https://sun.fo/suit/) (OFL-1.1) — 글꼴
+- [anime.js](https://github.com/juliangarnier/anime) v4.5.0 (MIT) — 소개·시연 페이지와 폰 앱의 움직임 (움직임 줄이기 설정 존중)
 - Air API: Qwen3.8-27B(비전), DeepSeek-V4.1-Flash(글), Qwen3-TTS(음성)
 
 ## 개인정보
