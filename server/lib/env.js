@@ -20,7 +20,7 @@ export function cfg() {
     key: e.AIR_API_KEY || '',
     base: (e.AIR_BASE || 'https://ap-1.aieev.cloud/endpoints').replace(/\/$/, ''),
     vision: { endpoint: e.VISION_ENDPOINT || 'qwen3-8-27b', model: e.VISION_MODEL || 'qwen/qwen3.8-27b' },
-    text: { endpoint: e.TEXT_ENDPOINT || 'deepseek-v4-1-flash-1017', model: e.TEXT_MODEL || 'deepseek/deepseek-v4.1-flash-1017' },
+    text: { endpoint: e.TEXT_ENDPOINT || 'deepseek-v4-1-flash-poc-1017', model: e.TEXT_MODEL || 'deepseek-ai/DeepSeek-V4.1-Flash-1017' },
     tts: { endpoint: e.TTS_ENDPOINT || 'qwen3-tts', model: e.TTS_MODEL || 'qwen/qwen3-tts-customvoice', voice: e.TTS_VOICE || 'Sohee' },
     port: Number(e.PORT || 8787),
     mock: e.MOCK_AI === '1' || !e.AIR_API_KEY,
