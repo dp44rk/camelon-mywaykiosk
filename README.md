@@ -1,16 +1,30 @@
-# 내 방식 QR — 어르신 키오스크 길잡이
+<div align="center">
 
-아무 키오스크나 폰 카메라로 비추면, 이어폰으로 **내 방식대로(쉬운 말·천천히·한 단계씩)** 무엇을 누를지 알려 줍니다.
+# 내 방식 QR
+
+**어르신 키오스크 길잡이** — 아무 키오스크나 폰으로 비추면, 쉬운 말로 한 단계씩
+
+[서비스 소개](https://dp44rk.github.io/myway/) · [시연 해보기](https://dp44rk.github.io/myway/demo.html) · [폰 앱](https://dp44rk.github.io/myway/app/)
+
+<img src="docs/img/mockup-phone-flow.png" width="720" alt="폰 화면 세 개: 내 방식 정하기, 누를 곳 안내, 결제 금액 확인">
+
+**팀 Camelon** · 박도연 · 여지원 · 윤진영<br>
+2026 AI 라이프 솔루션 챌린지 출품작 (원안: AI 라이프 아이디어 챌린지 5번 「내 방식 QR: 범용 접근성 프로필 패스」)
+
+</div>
+
+---
 
 > "화면 오른쪽 가운데에 주황색 네모가 있어요. 영어로 '테이크 아웃'이라고 써 있어요. 가지고 가기라는 뜻이에요. 그걸 누르세요."
 
-2026 AI 라이프 솔루션 챌린지 출품작입니다. 원래 아이디어는 AI 라이프 아이디어 챌린지 후보작 「내 방식 QR: 범용 접근성 프로필 패스」입니다.
+이어폰으로 들리는 실제 안내 문장이에요. 위치·색은 AI가 아니라 규칙 코드로 계산해서 매번 같고, 지어내지 않아요.
 
-- **서비스 소개**: https://dp44rk.github.io/myway/
-- **시연 (서버 없이 브라우저에서)**: https://dp44rk.github.io/myway/demo.html
 - 설계: [docs/SPEC.md](docs/SPEC.md) · 평가: [docs/EVAL.md](docs/EVAL.md)
 
 ## 두 가지 모드
+
+<img src="docs/img/mockup-kiosk-convert.png" width="640" alt="원래 키오스크 화면과 AI 화면 변환 결과">
+
 
 | | 카메라 모드 | 연동 모드 |
 |---|---|---|
@@ -79,6 +93,16 @@ node scripts/build-pages.mjs && npx http-server dist   # 시연 페이지 묶음
 - [SUIT](https://sun.fo/suit/) (OFL-1.1) — 글꼴
 - [anime.js](https://github.com/juliangarnier/anime) v4.5.0 (MIT) — 소개·시연 페이지와 폰 앱의 움직임 (움직임 줄이기 설정 존중)
 - Air API: Qwen3.8-27B(비전), DeepSeek-V4.1-Flash(글), Qwen3-TTS(음성)
+
+## 팀 Camelon
+
+<table>
+  <tr>
+    <td align="center" width="200"><b>박도연</b></td>
+    <td align="center" width="200"><b>여지원</b></td>
+    <td align="center" width="200"><b>윤진영</b></td>
+  </tr>
+</table>
 
 ## 개인정보
 
