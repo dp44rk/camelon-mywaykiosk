@@ -13,8 +13,8 @@
     "tunnel": "cloudflared tunnel --url http://localhost:8787",
     "test": "node --test test/*.test.js",
     "eval:capture": "node eval/capture.mjs",
-    "eval:run": "node eval/run.js",
-    "eval:plain": "node eval/plain-metrics.js"
+    "eval:run": "node eval/run.mjs",
+    "eval:plain": "node eval/plain-metrics.mjs"
   },
   "dependencies": {
     "jpeg-js": "^0.4.4"
