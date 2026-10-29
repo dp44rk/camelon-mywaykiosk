@@ -26,9 +26,10 @@ export function quick(text) {
 
 export async function say(text, { slow = false } = {}) {
   if (!text) return;
-  stop();
   lastText = text;
   listeners.forEach((f) => f(text));
+  if (window.__muted) return;
+  stop();
   const r = slow ? Math.max(0.6, rate - 0.2) : rate;
   if (useServerTts && api.online()) {
     try {
@@ -54,6 +55,7 @@ export async function say(text, { slow = false } = {}) {
 
 function local(text, r) {
   return new Promise((resolve) => {
+    if (window.__muted) return resolve();
     const ss = window.speechSynthesis;
     if (!ss) return resolve();
     const u = new SpeechSynthesisUtterance(text);
