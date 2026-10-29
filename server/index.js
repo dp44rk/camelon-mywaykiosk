@@ -124,23 +124,24 @@ function pickForGoal(screen, goal, state) {
   const els = screen.els;
   const by = (pred) => els.find(pred)?.id ?? null;
   switch (screen.type) {
-    case 'dine': return by((e) => place === 'eatin' ? /매장|먹고|eat/i.test(e.t) : /포장|가져|take/i.test(e.t));
+    case 'dine': return by((e) => place === 'eatin' ? /매장|먹고|먹기|여기서|eat/i.test(e.t) : /포장|가져|가지고|take/i.test(e.t));
     case 'menu': {
       const added = (state.history || []).filter((h) => h.type === 'option' && (h.action === 'press' || h.action === 'stuck') && /담기|이걸로/.test(h.target || '')).length;
-      if (added >= Math.max(1, (goal?.items || []).length)) return by((e) => e.k === 'pay' || e.k === 'next');
+      if (added >= Math.max(1, (goal?.items || []).length)) return by((e) => e.k === 'pay') ?? by((e) => e.k === 'next' && !/^[◀▶<>]$/.test(e.t));
       const hit = by((e) => e.k === 'item' && names.some((n) => norm(e.t).includes(norm(n)) || norm(n).includes(norm(e.t))));
       if (hit !== null) return hit;
       return by((e) => e.k === 'tab' && /커피|coffee|음료|식사|메인/i.test(e.t));
     }
     case 'option': {
       const t = goal?.items?.[0]?.temp;
-      const chosen = els.find((e) => e.sel && (t === 'ice' ? /ice|아이스/i.test(e.t) : /hot|핫|따뜻/i.test(e.t)));
-      if (t && !chosen) { const x = by((e) => (t === 'ice' ? /ice|아이스|차가/i.test(e.t) : /hot|핫|따뜻/i.test(e.t))); if (x !== null) return x; }
+      const ICE = /ice|아이스|차가/i, HOT = /hot|핫|따뜻/i;
+      const chosen = els.find((e) => e.sel && (t === 'ice' ? ICE : HOT).test(e.t));
+      if (t && !chosen) { const x = by((e) => (t === 'ice' ? ICE : HOT).test(e.t)); if (x !== null) return x; }
       return by((e) => e.k === 'yes' || e.k === 'next');
     }
     case 'upsell': case 'ad': return by((e) => ['no', 'close', 'skip'].includes(e.k));
     case 'point': return by((e) => ['skip', 'no'].includes(e.k));
-    case 'cart': return by((e) => e.k === 'pay' || e.k === 'next');
+    case 'cart': return by((e) => e.k === 'pay') ?? by((e) => e.k === 'next');
     case 'pay_method': return by((e) => (goal?.pay === 'phone' ? /페이|pay/i.test(e.t) : /카드|card/i.test(e.t)));
     case 'start': return by((e) => e.k === 'next' || /주문|시작|터치/.test(e.t));
     default: return by((e) => e.k === 'next' || e.k === 'yes');
