@@ -6,8 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv, cfg } from './lib/env.js';
-import { understand, normalizeScreen } from './lib/vision.js';
-import { plan, speak, signature } from './lib/guide.js';
+import { understand } from './lib/vision.js';
+import { runStep, fromKioskState } from './lib/engine.js';
 import { understandGoal, explainTerm } from './lib/goal.js';
 import { tts } from './lib/air.js';
 import { KioskHub } from './lib/hub.js';
@@ -38,9 +38,12 @@ async function readJson(req, limit = 8 * 1024 * 1024) {
   if (!n) return {};
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
+const SHARED = new Set(['engine.js', 'guide.js', 'layout.js', 'plain.js', 'screen.js', 'goal-rules.js']); // 브라우저와 같이 쓰는 순수 모듈
 function serveStatic(req, res, urlPath) {
   let rel = decodeURIComponent(urlPath);
   let base = path.join(ROOT, 'public');
+  const sm = rel.match(/^\/lib\/([\w-]+\.js)$/);
+  if (sm) { if (!SHARED.has(sm[1])) return send(res, 404, 'not found'); base = path.join(ROOT, 'server', 'lib'); rel = '/' + sm[1]; }
   if (rel.startsWith('/kiosk')) { base = path.join(ROOT, 'kiosk'); rel = rel.slice('/kiosk'.length) || '/'; }
   if (rel.endsWith('/')) rel += 'index.html';
   const file = path.join(base, rel);
@@ -75,10 +78,7 @@ async function handleStep(body) {
 
   const linked = kioskId && hub.getState(kioskId);
   if (linked) {
-    screen = normalizeScreen(linked.screen); // 연동 모드: 키오스크가 직접 알려준 화면 구조
-    screen.bg = linked.screen.bg || null;
-    for (const e of screen.els) e.c = linked.screen.els.find((x) => x.id === e.id)?.c || null;
-    if (screen.pick === null) screen.pick = pickForGoal(screen, goal, state);
+    screen = fromKioskState(linked.screen, goal, state); // 연동 모드: 키오스크가 직접 알려준 화면 구조
     source = 'linked';
   } else if (C.mock) {
     return { error: 'AI 키가 없어서 카메라 모드를 쓸 수 없어요. 연동 키오스크의 QR을 찍거나 .env에 AIR_API_KEY를 넣어 주세요.', mock: true };
@@ -89,63 +89,11 @@ async function handleStep(body) {
   }
 
   const img = source === 'camera' ? decodeImage(image) : null;
-  const p = plan(screen, state, profile);
-  const out = speak({ plan: p, screen, img, profile, state });
-
-  const sig = p.sig || signature(screen);
-  const newState = {
-    ...state,
-    lastSig: sig,
-    lastAction: p.action === 'press' || p.action === 'stuck' ? 'press' : p.action,
-    stuck: p.action === 'stuck' ? p.stuck : 0,
-    unsure: p.action === 'unsure' ? p.unsure : 0,
-    payConfirmed: !!state.payConfirmed,
-    history: [...(state.history || []), { type: screen.type, target: out.target?.r || out.target?.t || null, action: p.action }].slice(-12),
-  };
-  if (screen.type === 'done') newState.payConfirmed = false;
-
-  const res = {
-    source, model,
-    screen: { type: screen.type, title: screen.title, quality: screen.quality, screen: screen.screen, total: screen.total, no: screen.no, conf: screen.conf, els: screen.els.map((e) => ({ id: e.id, t: e.t, r: e.r, k: e.k, box: e.box })) },
-    action: out.action, say: out.utterance, lines: out.lines, display: out.display, target: out.target, place: out.place,
-    check: { ok: out.check.ok, problems: out.check.problems }, stats: out.stats, situation: out.situation,
-    state: newState,
-    ms: { total: Date.now() - t0, vision: visionMs },
-  };
+  const res = runStep({ screen, img, goal, state, profile, source });
+  res.model = model;
+  res.ms = { total: Date.now() - t0, vision: visionMs };
   logStep({ at: new Date().toISOString(), goal, profile, state, res, rawText });
   return res;
-}
-
-// 연동 모드에서 키오스크가 pick을 주지 않으면 목표와 글자를 맞춰 고른다
-function pickForGoal(screen, goal, state) {
-  const names = (goal?.items || []).flatMap((i) => [i.name, i.temp === 'ice' ? 'ICE' : i.temp === 'hot' ? 'HOT' : null]).filter(Boolean);
-  const place = goal?.place;
-  const norm = (s) => String(s || '').replace(/\s/g, '').toLowerCase();
-  const els = screen.els;
-  const by = (pred) => els.find(pred)?.id ?? null;
-  switch (screen.type) {
-    case 'dine': return by((e) => place === 'eatin' ? /매장|먹고|먹기|여기서|eat/i.test(e.t) : /포장|가져|가지고|take/i.test(e.t));
-    case 'menu': {
-      const added = (state.history || []).filter((h) => h.type === 'option' && (h.action === 'press' || h.action === 'stuck') && /담기|이걸로/.test(h.target || '')).length;
-      if (added >= Math.max(1, (goal?.items || []).length)) return by((e) => e.k === 'pay') ?? by((e) => e.k === 'next' && !/^[◀▶<>]$/.test(e.t));
-      const hit = by((e) => e.k === 'item' && names.some((n) => norm(e.t).includes(norm(n)) || norm(n).includes(norm(e.t))));
-      if (hit !== null) return hit;
-      return by((e) => e.k === 'tab' && /커피|coffee|음료|식사|메인/i.test(e.t));
-    }
-    case 'option': {
-      const t = goal?.items?.[0]?.temp;
-      const ICE = /ice|아이스|차가/i, HOT = /hot|핫|따뜻/i;
-      const chosen = els.find((e) => e.sel && (t === 'ice' ? ICE : HOT).test(e.t));
-      if (t && !chosen) { const x = by((e) => (t === 'ice' ? ICE : HOT).test(e.t)); if (x !== null) return x; }
-      return by((e) => e.k === 'yes' || e.k === 'next');
-    }
-    case 'upsell': case 'ad': return by((e) => ['no', 'close', 'skip'].includes(e.k));
-    case 'point': return by((e) => ['skip', 'no'].includes(e.k));
-    case 'cart': return by((e) => e.k === 'pay') ?? by((e) => e.k === 'next');
-    case 'pay_method': return by((e) => (goal?.pay === 'phone' ? /페이|pay/i.test(e.t) : /카드|card/i.test(e.t)));
-    case 'start': return by((e) => e.k === 'next' || /주문|시작|터치/.test(e.t));
-    default: return by((e) => e.k === 'next' || e.k === 'yes');
-  }
 }
 
 // ---------- TTS 캐시 ----------
