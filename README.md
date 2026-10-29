@@ -58,6 +58,16 @@ npm run tunnel            # https://xxxx.trycloudflare.com 주소가 나옴
 
 `AIR_API_KEY`가 없으면 연동 모드만 동작합니다 (`/api/health`의 `mock: true`).
 
+### 시연 페이지 음성 미리 녹음 (Qwen3-TTS)
+
+GitHub Pages 시연은 서버가 없어서, 안내 문장을 Qwen3-TTS로 미리 녹음해 `public/voice/`에 둡니다. 녹음이 없는 문장만 폰 내장 음성으로 말해요.
+
+```fish
+npm start                                  # 다른 터미널에서
+node scripts/collect-utterances.cjs        # 시연에서 나오는 안내 문장 모으기 → public/voice/texts.json
+node scripts/prerender-tts.mjs             # 문장 단위로 녹음 → public/voice/*.mp3, index.json (약 130문장, 2.5천 자)
+```
+
 ## 구조
 
 ```
