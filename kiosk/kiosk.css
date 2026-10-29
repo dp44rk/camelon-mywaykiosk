@@ -1,8 +1,8 @@
 /* 목업 키오스크 — 일부러 "흔한 프랜차이즈 키오스크"처럼: 작은 글씨, 영어 라벨, 회색 안내문, 광고 */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import url('../vendor/suit/suit.css');
 :root { --brand: #3b2a20; --accent: #e8792b; --kbg: #f6f3ef; --fs: 1; --ink: #222; --muted: #8a8a8a; }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: #1a1a1a; overflow: hidden; font-family: Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; }
+html, body { margin: 0; height: 100%; background: #1a1a1a; overflow: hidden; font-family: 'SUIT', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; }
 #stage { position: absolute; width: 1080px; height: 1920px; transform-origin: 0 0; }
 #kiosk { position: relative; width: 1080px; height: 1920px; background: var(--kbg); color: var(--ink); overflow: hidden; font-size: calc(28px * var(--fs)); }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
