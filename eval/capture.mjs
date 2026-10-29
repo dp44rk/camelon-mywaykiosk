@@ -44,7 +44,7 @@ for (const [gi, G] of GOALS.entries()) {
     const name = `g${gi}-s${String(s).padStart(2, '0')}`;
     const kb = await page.locator('#kiosk').boundingBox();
     await page.screenshot({ path: path.join(OUT, name + '.clean.png'), clip: kb });
-    samples.push({ name, store: G.store, goalText: G.text, goal: G.goal, state, gt: { type: r.screen.type, action: r.action, target: r.target, total: r.screen.total, els: r.screen.els } });
+    samples.push({ name, store: G.store, goalText: G.text, goal: G.goal, state, raw: screen, gt: { type: r.screen.type, action: r.action, target: r.target, total: r.screen.total, els: r.screen.els } });
     console.log(name, r.screen.type, r.action, r.target?.t || '');
     if (r.action === 'done') break;
     state = r.state;

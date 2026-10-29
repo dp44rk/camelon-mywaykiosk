@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.resolve(process.argv[2] || path.join(ROOT, 'dist'));
-const SHARED = ['engine.js', 'guide.js', 'layout.js', 'plain.js', 'screen.js', 'goal-rules.js'];
+const SHARED = ['engine.js', 'guide.js', 'layout.js', 'plain.js', 'screen.js', 'goal-rules.js', 'convert.js'];
 
 // fs.cpSync는 일부 마운트 폴더에서 권한 오류가 나서 직접 복사
 function copyDir(src, dst) {

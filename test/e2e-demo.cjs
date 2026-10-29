@@ -34,11 +34,11 @@ const OUT = process.env.SHOTS || '/tmp/myway-shots/'; require('fs').mkdirSync(OU
     if (n === 3 || n === 5) await page.screenshot({ path: OUT + `demo-step-${n}.png` });
     if (last.action === 'done' || last.action === 'error') break;
     if (last.action === 'confirm_pay') { await phone.locator('#pay-yes').click(); continue; }
-    if (last.action === 'insert_card') { await kfr().click('[data-act=insert]'); continue; }
+    if (last.action === 'insert_card') { await kfr().evaluate(() => document.querySelector('[data-act=insert]').click()); continue; }
     if (last.target) {
       const k = await kfr().evaluate(() => { const r = document.getElementById('kiosk').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
       const box = last.target.box;
-      await kfr().evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-act]')?.click(), [k.x + ((box[0] + box[2]) / 2000) * k.w, k.y + ((box[1] + box[3]) / 2000) * k.h]);
+      await kfr().evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-ref],[data-act]')?.click(), [k.x + ((box[0] + box[2]) / 2000) * k.w, k.y + ((box[1] + box[3]) / 2000) * k.h]);
     }
   }
   await page.waitForTimeout(600);

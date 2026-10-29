@@ -11,6 +11,9 @@ import { runStep, fromKioskState } from './lib/engine.js';
 import { understandGoal, explainTerm } from './lib/goal.js';
 import { tts } from './lib/air.js';
 import { KioskHub } from './lib/hub.js';
+import { ruleConvert, validate, convertPrompt } from './lib/convert.js';
+import { chat, parseJsonLoose } from './lib/air.js';
+import { normalizeScreen } from './lib/screen.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 loadEnv(ROOT);
@@ -38,7 +41,7 @@ async function readJson(req, limit = 8 * 1024 * 1024) {
   if (!n) return {};
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-const SHARED = new Set(['engine.js', 'guide.js', 'layout.js', 'plain.js', 'screen.js', 'goal-rules.js']); // 브라우저와 같이 쓰는 순수 모듈
+const SHARED = new Set(['engine.js', 'guide.js', 'layout.js', 'plain.js', 'screen.js', 'goal-rules.js', 'convert.js']); // 브라우저와 같이 쓰는 순수 모듈
 function serveStatic(req, res, urlPath) {
   let rel = decodeURIComponent(urlPath);
   let base = path.join(ROOT, 'public');
@@ -96,6 +99,30 @@ async function handleStep(body) {
   return res;
 }
 
+// ---------- /api/convert : AI 화면 변환 ----------
+const convCache = new Map(); // 같은 화면·같은 프로필 → 저장해 둔 변환 재사용
+async function handleConvert(body) {
+  const t0 = Date.now();
+  const raw = body.screen || {};
+  const screen = normalizeScreen({ ...raw, els: (raw.els || []).map((e) => ({ ...e, b: e.b || e.box })) });
+  const key = screen.type + '|' + screen.els.map((e) => `${e.id}:${e.t}:${e.k}:${e.sel ? 1 : 0}`).join(',') + '|' + (body.profile?.experience || '');
+  if (convCache.has(key)) return { ...convCache.get(key), cached: true, ms: Date.now() - t0 };
+  let out;
+  if (!C.mock) {
+    try {
+      const r = await chat({ kind: 'text', messages: convertPrompt(screen, body.profile), maxTokens: 1200, temperature: 0, timeoutMs: 15000 });
+      const plan = parseJsonLoose(r.text); plan.source = r.model;
+      const v = validate(plan, screen);
+      out = { plan: v.plan, report: v.report, source: r.model, aiMs: r.ms };
+    } catch (e) { out = null; console.warn('[변환] AI 실패 → 규칙:', e.message); }
+  }
+  if (!out) { const v = validate(ruleConvert(screen), screen); out = { plan: v.plan, report: v.report, source: 'rule' }; }
+  convCache.set(key, out);
+  if (convCache.size > 500) convCache.delete(convCache.keys().next().value);
+  logStep({ at: new Date().toISOString(), kind: 'convert', type: screen.type, source: out.source, report: out.report });
+  return { ...out, cached: false, ms: Date.now() - t0 };
+}
+
 // ---------- TTS 캐시 ----------
 const ttsCache = new Map();
 async function handleTts(body) {
@@ -117,6 +144,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (p === '/api/health') return send(res, 200, { ok: true, mock: C.mock, vision: C.vision.model, text: C.text.model, tts: C.tts.model, color: !!jpeg });
     if (p === '/api/step' && req.method === 'POST') return send(res, 200, await handleStep(await readJson(req)));
+    if (p === '/api/convert' && req.method === 'POST') return send(res, 200, await handleConvert(await readJson(req)));
     if (p === '/api/goal' && req.method === 'POST') { const b = await readJson(req); return send(res, 200, await understandGoal(String(b.text || ''), { mock: C.mock })); }
     if (p === '/api/explain' && req.method === 'POST') { const b = await readJson(req); return send(res, 200, await explainTerm(String(b.term || ''), { mock: C.mock })); }
     if (p === '/api/tts' && req.method === 'POST') { const r = await handleTts(await readJson(req)); return send(res, 200, r.buf, { 'Content-Type': r.type, 'Cache-Control': 'max-age=3600' }); }
