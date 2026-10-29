@@ -34,7 +34,7 @@ const OUT = process.env.SHOTS || '/tmp/myway-shots/'; require('fs').mkdirSync(OU
     await kiosk.screenshot({ path: OUT + `k-step-${String(n).padStart(2, '0')}.png` });
     if (last.action === 'done') break;
     if (last.action === 'confirm_pay') { await phone.click('#pay-yes'); continue; }
-    if (last.action === 'insert_card') { await kiosk.click('[data-act=insert]'); continue; }
+    if (last.action === 'insert_card') { await kiosk.evaluate(() => document.querySelector('[data-act=insert]').click()); continue; }
     if (last.target) {
       const box = last.target.box, k = await kiosk.locator('#kiosk').boundingBox();
       await kiosk.mouse.click(k.x + ((box[0] + box[2]) / 2000) * k.width, k.y + ((box[1] + box[3]) / 2000) * k.height);
