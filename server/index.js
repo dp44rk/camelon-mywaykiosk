@@ -117,7 +117,7 @@ async function handleConvert(body) {
     } catch (e) { out = null; console.warn('[변환] AI 실패 → 규칙:', e.message); }
   }
   if (!out) { const v = validate(ruleConvert(screen), screen); out = { plan: v.plan, report: v.report, source: 'rule' }; }
-  convCache.set(key, out);
+  if (out.source !== 'rule' || C.mock) convCache.set(key, out); // AI 실패로 규칙에 기댄 결과는 저장하지 않음(다음에 AI 다시 시도)
   if (convCache.size > 500) convCache.delete(convCache.keys().next().value);
   logStep({ at: new Date().toISOString(), kind: 'convert', type: screen.type, source: out.source, report: out.report });
   return { ...out, cached: false, ms: Date.now() - t0 };
