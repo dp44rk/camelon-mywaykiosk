@@ -11,6 +11,10 @@ const S = STORES[storeKey];
 const KIOSK_ID = qs.get('id') || S.id;
 const API = (qs.get('api') || '').replace(/\/$/, '');
 const APP_URL = new URL(qs.get('app') || '../', location.href).href;
+// hub=local: 서버 없이 같은 브라우저 안에서 폰 앱과 연결 (GitHub Pages 시연)
+const LOCAL = qs.get('hub') === 'local';
+const chan = LOCAL && 'BroadcastChannel' in window ? new BroadcastChannel('myway-hub') : null;
+let localVersion = 0;
 
 const st = {
   screen: 'start', tab: S.tabs[0].id, page: 0, modal: null, cart: [], dine: null,
@@ -236,7 +240,7 @@ function resetOrder() {
 }
 async function payNow() {
   st.screen = 'paying'; render();
-  try { await fetch(`${API}/api/kiosk/${KIOSK_ID}/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ total: total(), items: st.cart }) }); } catch {}
+  if (!chan) try { await fetch(`${API}/api/kiosk/${KIOSK_ID}/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ total: total(), items: st.cart }) }); } catch {}
   await new Promise((r) => setTimeout(r, 900));
   st.orderNo = 100 + Math.floor(Math.random() * 900);
   st.screen = 'done'; render();
@@ -285,6 +289,7 @@ function publish() {
   lastPub = key;
   clearTimeout(pubTimer);
   pubTimer = setTimeout(() => {
+    if (chan) { chan.postMessage({ type: 'state', id: KIOSK_ID, screen, version: ++localVersion }); return; }
     fetch(`${API}/api/kiosk/${KIOSK_ID}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ screen }) }).catch(() => {});
   }, 120);
 }
@@ -341,6 +346,16 @@ window.addEventListener('resize', fit);
 // 테스트·평가용 조작 함수
 window.__kiosk = { st, render, act: (a) => { const el = [...root.querySelectorAll('[data-act]')].find((e) => e.dataset.act === a); el?.click(); return !!el; }, setMyway: (p) => { st.myway = p ? kioskPrefs(p) : null; render(); } };
 
+if (chan) {
+  chan.onmessage = (e) => {
+    const m = e.data || {};
+    if (m.id && m.id !== KIOSK_ID) return;
+    if (m.type === 'hello') { lastPub = ''; publish(); }
+    if (m.type === 'profile') { st.myway = m.profile ? kioskPrefs(m.profile) : null; if (st.myway && st.modal?.type === 'ad') st.modal = null; render(); }
+    if (m.type === 'reset') { resetOrder(); st.myway = null; render(); }
+  };
+}
+
 fit();
 render();
-if (qs.get('offline') !== '1') pollProfile();
+if (!chan && qs.get('offline') !== '1') pollProfile();

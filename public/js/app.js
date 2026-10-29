@@ -131,7 +131,7 @@ $('#goal-text').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#
 async function submitGoal(text) {
   V.unlock();
   let r;
-  try { r = app.demo ? await app.demo.goal(text) : await api.goal(text); }
+  try { r = app.demo?.active ? await app.demo.goal(text) : await api.goal(text); }
   catch { toast('서버에 연결이 안 돼요. 잠시 뒤 다시 해 주세요.'); return; }
   app.goal = r.goal;
   go('confirm');
@@ -156,7 +156,7 @@ async function enterGuide() {
   $('#pay-row').hidden = true;
   document.querySelector('.viewport').classList.remove('frozen');
   $('#hl').classList.remove('on');
-  if (app.demo) { await app.demo.enterGuide(); }
+  if (app.demo?.active) { await app.demo.enterGuide(); }
   else {
     try { await Cam.start($('#video')); } catch (e) { setInstr('카메라를 켤 수 없어요', e.message, 'warn'); }
   }
@@ -175,7 +175,7 @@ async function shoot() {
   if (app.busy) return;
   const vp = document.querySelector('.viewport');
   let shot = null;
-  if (app.demo) shot = await app.demo.capture();
+  if (app.demo?.active) shot = await app.demo.capture();
   else if (!app.kioskId || !linked) shot = Cam.capture($('#video'));
   if (!app.kioskId && !shot) { V.say('카메라가 아직 준비되지 않았어요.'); return; }
   V.beep();
@@ -195,14 +195,14 @@ async function shoot() {
   await step(shot);
 }
 
-async function step(shot) {
+async function step(shot, { auto = false } = {}) {
   app.busy = true; $('#busy').hidden = false; $('#shutter').disabled = true;
   const waitTalk = setTimeout(() => V.quick('보고 있어요.'), 700);
   let r;
   try {
     const body = { goal: app.goal, state: app.gstate, profile: app.profile || P.DEFAULT };
     if (linked && app.kioskId) body.kioskId = app.kioskId; else body.image = shot?.dataUrl;
-    r = app.demo ? await app.demo.step(body) : await api.step(body);
+    r = app.demo?.active ? await app.demo.step(body) : await api.step(body);
   } catch (e) {
     r = { action: 'error', say: '연결이 잠시 끊겼어요. 다시 눌러 주세요.', display: { big: '다시 눌러 주세요', sub: '연결이 끊겼어요' } };
   } finally {
@@ -210,6 +210,8 @@ async function step(shot) {
     app.busy = false; $('#busy').hidden = true; $('#shutter').disabled = false;
   }
   if (r.error) r = { action: 'error', say: r.mock ? '카메라 안내는 아직 준비 중이에요. 키오스크의 내 방식 QR을 찍어 주세요.' : r.error, display: { big: '다시 찍어 주세요', sub: r.error } };
+  // 자동(화면 바뀜 감지)일 때 '그대로예요'는 말하지 않는다 — 사용자가 아직 안 눌렀을 수 있음
+  if (auto && (r.action === 'stuck' || r.action === 'error')) return;
   if (r.state) app.gstate = r.state;
   app.last = r;
   sayRes(r, shot);
@@ -283,7 +285,7 @@ $('#t-what').onclick = async () => {
   const t = app.last?.target;
   if (!t) return V.say('먼저 화면을 찍어 주세요.');
   if (app.last.display?.gloss) return V.say(`'${t.r || t.t}'는 ${app.last.display.gloss}라는 뜻이에요.`);
-  try { const r = app.demo ? { text: `'${t.r || t.t}'를 누르면 다음으로 넘어가요.` } : await api.explain(t.t); V.say(r.text); } catch { V.say('지금은 뜻을 찾을 수 없어요.'); }
+  try { const r = app.demo?.active ? { text: `'${t.r || t.t}'를 누르면 다음으로 넘어가요.` } : await api.explain(t.t); V.say(r.text); } catch { V.say('지금은 뜻을 찾을 수 없어요.'); }
 };
 $('#t-help').onclick = showHelp;
 $('#t-talk').onclick = async () => {
@@ -309,16 +311,17 @@ function showDone(r) {
 }
 
 // ---------- 연동 모드 ----------
-let linked = false, pollGen = 0;
+let linked = false, pollGen = 0, unwatch = null;
 async function linkKiosk(id, apiBase) {
   if (apiBase && !api.base()) api.setBase(apiBase);
   app.kioskId = id; linked = true;
-  const L = $('#linked'); L.hidden = false; L.textContent = '연동됨 · 폰을 내려놓으셔도 돼요. 화면이 바뀌면 알려 드려요.';
-  try { if (!app.demo) await api.sendProfile(id, app.profile || P.DEFAULT); } catch {}
+  const L = $('#linked'); L.hidden = false; L.textContent = '연동됨 · 폰을 내려놓으셔도 돼요';
+  try { if (app.demo?.active) app.demo.sendProfile(app.profile || P.DEFAULT); else await api.sendProfile(id, app.profile || P.DEFAULT); } catch {}
   V.beep(660, 120);
   await V.say('키오스크와 연결됐어요. 키오스크 화면이 내 방식으로 바뀌었어요.');
   await step(null);
-  if (!app.demo) watchKiosk(++pollGen);
+  if (app.demo?.active) { unwatch?.(); unwatch = app.demo.watch(() => { if (!app.busy && document.querySelector('#v-guide.on')) step(null, { auto: true }); }); }
+  else watchKiosk(++pollGen);
 }
 async function watchKiosk(gen) {
   let since = 0;
@@ -328,7 +331,7 @@ async function watchKiosk(gen) {
       if (gen !== pollGen) return;
       if (since && j.version !== since && !app.busy && document.querySelector('#v-guide.on')) {
         await new Promise((r) => setTimeout(r, 500)); // 화면이 다 바뀔 때까지 잠깐
-        await step(null);
+        await step(null, { auto: true });
       }
       since = j.version;
     } catch { await new Promise((r) => setTimeout(r, 3000)); }
@@ -340,12 +343,14 @@ const ENTER = { setup: enterSetup, qr: enterQr, goal: enterGoal, guide: enterGui
 // ---------- 시작 ----------
 async function boot() {
   applyProfile();
-  const h = await api.health();
+  // PC로 처음 들어오면 시연 페이지로 (폰·키오스크 QR·체험 모드는 그대로)
+  if (window.innerWidth >= 900 && !qs.has('demo') && !qs.has('k') && !qs.has('app') && !location.hash) { location.replace('demo.html'); return; }
+  const h = qs.get('demo') === '1' ? null : await api.health();
   const srv = $('#srv');
-  if (!api.base() || !h) {
-    srv.innerHTML = '서버 없이 여는 중이에요. <a href="#" id="demo-on">체험 모드로 보기</a>';
-    const d = await import('./demo.js').catch(() => null);
-    if (d) { app.demo = d.provider(app); if (qs.get('demo') === '1' || !api.base()) app.demo.on(); }
+  if (!h) {
+    const d = await import('./demo.js').catch((e) => { console.warn(e); return null; });
+    if (d) { app.demo = d.provider(app); app.demo.on(); }
+    srv.innerHTML = '체험 모드예요. 같은 화면의 목업 키오스크와 연결돼요. 실제 카메라 안내는 AI 서버를 켜야 해요. <a href="demo.html">시연 페이지</a>';
   } else {
     srv.textContent = h.mock ? '서버 연결됨 · AI 키 없음 (연동 키오스크만 안내)' : `서버 연결됨 · ${h.vision}`;
   }

@@ -1,9 +1,7 @@
 // 화면 이해: 사진 + 목표 → 구조화된 화면 정보(JSON)
 import { chat, parseJsonLoose } from './air.js';
-import { clampBox } from './layout.js';
-
-export const SCREEN_TYPES = ['start', 'dine', 'menu', 'option', 'upsell', 'cart', 'point', 'pay_method', 'pay_card', 'done', 'ad', 'other'];
-export const ELEMENT_KINDS = ['btn', 'tab', 'item', 'close', 'yes', 'no', 'skip', 'next', 'back', 'pay', 'cancel', 'staff', 'plus', 'minus'];
+import { normalizeScreen, SCREEN_TYPES, ELEMENT_KINDS } from './screen.js';
+export { normalizeScreen, SCREEN_TYPES, ELEMENT_KINDS };
 
 const SYSTEM = `너는 어르신의 키오스크 주문을 돕는 눈이다. 사진 속 키오스크 화면을 보고 JSON 하나만 출력한다. 설명 문장, 코드블록, 생각 과정은 쓰지 않는다.
 
@@ -31,45 +29,6 @@ function userPrompt({ goal, history, profile }) {
   const prefs = [];
   if (profile?.skipPoints !== false) prefs.push('적립·멤버십·쿠폰은 건너뜀');
   return `목표: ${g}\n지금까지: ${h}\n선호: ${prefs.join(', ') || '없음'}\n이 사진의 화면 JSON:`;
-}
-
-/** 모델 출력 정리·검증 */
-export function normalizeScreen(raw) {
-  const s = {
-    kiosk: raw?.kiosk !== false,
-    quality: ['ok', 'far', 'blur', 'dark', 'glare', 'partial'].includes(raw?.quality) ? raw.quality : 'ok',
-    screen: clampBox(raw?.screen) || [0, 0, 1000, 1000],
-    type: SCREEN_TYPES.includes(raw?.type) ? raw.type : 'other',
-    title: String(raw?.title || '').slice(0, 80),
-    els: [],
-    total: Number.isFinite(+raw?.total) && raw?.total !== null ? +raw.total : null,
-    no: raw?.no ?? null,
-    pick: raw?.pick ?? null,
-    why: String(raw?.why || '').slice(0, 120),
-    say: String(raw?.say || '').slice(0, 120),
-    mean: raw?.mean ? String(raw.mean).slice(0, 80) : null,
-    conf: Math.max(0, Math.min(1, Number(raw?.conf ?? 0.5))),
-  };
-  const seen = new Set();
-  for (const e of Array.isArray(raw?.els) ? raw.els.slice(0, 40) : []) {
-    const box = clampBox(e?.b);
-    const id = Number(e?.id);
-    if (!box || !Number.isFinite(id) || seen.has(id)) continue;
-    seen.add(id);
-    s.els.push({
-      id,
-      t: String(e.t ?? '').slice(0, 40),
-      r: String(e.r ?? e.t ?? '').slice(0, 40),
-      k: ELEMENT_KINDS.includes(e.k) ? e.k : 'btn',
-      box,
-      p: Number.isFinite(+e.p) && e.p !== null ? +e.p : null,
-      c: e.c || null,
-      sel: !!e.sel,
-    });
-  }
-  if (s.pick !== null && !s.els.some((e) => e.id === Number(s.pick))) s.pick = null;
-  else if (s.pick !== null) s.pick = Number(s.pick);
-  return s;
 }
 
 export async function understand({ imageDataUrl, goal, history, profile, override }) {
