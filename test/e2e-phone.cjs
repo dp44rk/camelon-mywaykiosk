@@ -13,7 +13,7 @@ const OUT = process.env.SHOTS || '/tmp/myway-shots/'; require('fs').mkdirSync(OU
   await pctx.addInitScript(() => localStorage.setItem('myway.profile.v1', JSON.stringify({ v: 1, rate: 0.9, vision: 'normal', experience: 'first', skipPoints: true, noUpsell: true, plain: true })));
   const phone = await pctx.newPage();
   phone.on('pageerror', (e) => console.log('phone error:', e.message));
-  await phone.goto(`${BASE}/?k=${kid}`);
+  await phone.goto(`${BASE}/app/?k=${kid}`);
   await phone.waitForTimeout(800);
   await phone.screenshot({ path: OUT + 'p-goal.png' });
   await phone.fill('#goal-text', process.env.GOAL || '차가운 아메리카노 한 잔 가져갈게');
