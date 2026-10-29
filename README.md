@@ -151,7 +151,7 @@
 | `AIR_API_KEY` | Air API 시크릿 키 (없으면 연동 모드만 동작) | – |
 | `AIR_BASE` | Air API 주소 | `https://ap-1.aieev.cloud/endpoints` |
 | `VISION_ENDPOINT` · `VISION_MODEL` | 화면 보기 모델 | `qwen3-8-27b` · `qwen/qwen3.8-27b` |
-| `TEXT_ENDPOINT` · `TEXT_MODEL` | 목표 이해·화면 변환 모델 | `deepseek-v4-1-flash-1017` · `deepseek/deepseek-v4.1-flash-1017` |
+| `TEXT_ENDPOINT` · `TEXT_MODEL` | 목표 이해·화면 변환 모델 | `deepseek-v4-1-flash-poc-1017` · `deepseek-ai/DeepSeek-V4.1-Flash-1017` |
 | `TTS_ENDPOINT` · `TTS_MODEL` · `TTS_VOICE` | 음성 | `qwen3-tts` · `qwen/qwen3-tts-customvoice` · `Sohee` |
 | `PORT` | 서버 포트 | `8787` |
 | `MOCK_AI` | `1`이면 AI 끔 | `0` |
