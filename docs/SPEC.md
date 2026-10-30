@@ -52,7 +52,7 @@
       │ 사진(1024px JPEG) + 목표 + 진행 기록 + 프로필
       ▼
 [중계 서버 Node]  API 키 보관
-  ├ /api/step   : 비전 모델(Qwen3.8-27B 또는 Qwen3.5-9B)로 화면 이해(JSON)
+  ├ /api/step   : 비전 모델(Qwen3.5-9B)로 화면 이해(JSON)
   │               → 규칙 플래너(안전장치) → 위치·색 규칙 → 쉬운 말 검사기 → 문장
   ├ /api/goal   : 텍스트 모델로 목표 이해(JSON) + 되묻기 문장
   ├ /api/explain: "그게 뭐야?"
