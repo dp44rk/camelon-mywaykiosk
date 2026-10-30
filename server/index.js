@@ -110,14 +110,14 @@ async function handleConvert(body) {
   let out;
   if (!C.mock) {
     try {
-      const r = await chat({ kind: 'text', messages: convertPrompt(screen, body.profile), maxTokens: 1200, temperature: 0, timeoutMs: 15000 });
+      const r = await chat({ kind: 'text', messages: convertPrompt(screen, body.profile), maxTokens: 1200, temperature: 0, timeoutMs: 30000 });
       const plan = parseJsonLoose(r.text); plan.source = r.model;
       const v = validate(plan, screen);
       out = { plan: v.plan, report: v.report, source: r.model, aiMs: r.ms };
     } catch (e) { out = null; console.warn('[변환] AI 실패 → 규칙:', e.message); }
   }
   if (!out) { const v = validate(ruleConvert(screen), screen); out = { plan: v.plan, report: v.report, source: 'rule' }; }
-  convCache.set(key, out);
+  if (out.source !== 'rule' || C.mock) convCache.set(key, out); // AI 실패로 규칙에 기댄 결과는 저장하지 않음(다음에 AI 다시 시도)
   if (convCache.size > 500) convCache.delete(convCache.keys().next().value);
   logStep({ at: new Date().toISOString(), kind: 'convert', type: screen.type, source: out.source, report: out.report });
   return { ...out, cached: false, ms: Date.now() - t0 };
