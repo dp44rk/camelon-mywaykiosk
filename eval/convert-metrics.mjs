@@ -18,9 +18,15 @@ const BASE = process.env.BASE || 'http://localhost:8787';
 if (AI && !VIA_SERVER) { loadEnv(ROOT); if (!cfg().key) { console.error('.env에 AIR_API_KEY가 없어요'); process.exit(1); } }
 const { chat, parseJsonLoose } = AI && !VIA_SERVER ? await import('../server/lib/air.js') : {};
 const set = JSON.parse(fs.readFileSync(path.join(ROOT, 'eval', 'set.json'), 'utf8'));
-const rows = [];
+// AI 모드는 한 화면마다 중간 저장 → 끊겨도 다시 돌리면 이어서 (처음부터: --fresh)
+const PART = path.join(ROOT, 'eval', 'results', 'convert-ai.partial.json');
+const rows = AI && !process.argv.includes('--fresh') && fs.existsSync(PART) ? JSON.parse(fs.readFileSync(PART, 'utf8')) : [];
+if (rows.length) console.log(`이어서: 이미 ${rows.length}개 화면 끝남`);
+process.on('unhandledRejection', (e) => { console.error('\n예상 못 한 오류:', e); });
 for (const s of set.samples) {
   if (!s.raw?.els?.length) continue;
+  if (rows.some((r) => r.name === s.name)) continue;
+  try {
   const screen = normalizeScreen(s.raw);
   let v, source = 'rule', ms = 0;
   if (AI) {
@@ -32,15 +38,17 @@ for (const s of set.samples) {
       try {
         const r = await chat({ kind: 'text', messages: convertPrompt(screen, { experience: 'some' }), maxTokens: 1200, temperature: 0, timeoutMs: 60000 });
         v = validate(parseJsonLoose(r.text), screen); source = r.model;
-      } catch (e) { v = validate(ruleConvert(screen), screen); source = 'rule'; process.stdout.write(`\n${s.name} AI 실패: ${e.message}\n`); }
+      } catch (e) { v = validate(ruleConvert(screen), screen); source = 'rule'; console.log(`${s.name} AI 실패: ${e.message}`); }
     }
     ms = Date.now() - t0;
-    process.stdout.write(`\r${rows.length + 1}개 화면 · ${source === 'rule' ? '규칙' : 'AI'} ${ms}ms   `);
+    console.log(`${rows.length + 1}/${set.samples.length} ${s.name} · ${source === 'rule' ? '규칙' : 'AI'} ${ms}ms`);
   } else v = validate(ruleConvert(screen), screen);
   const labels = Object.values(v.plan.labels);
   const before = screen.els.filter((e) => e.k !== 'item' && hardWords(e.t).length).length;
   const after = screen.els.filter((e) => e.k !== 'item' && hardWords(v.plan.labels[e.id] || '').length).length;
   rows.push({ name: s.name, type: screen.type, n: screen.els.length, ok: v.report.ok, coverage: v.report.coverage, invented: v.report.invented, relabeled: v.report.relabeled, hardBefore: before, hardAfter: after, sections: v.plan.sections.length, source, ms });
+  if (AI) { fs.mkdirSync(path.dirname(PART), { recursive: true }); fs.writeFileSync(PART, JSON.stringify(rows)); }
+  } catch (e) { console.log(`${s.name} 평가 오류(건너뜀): ${e.stack || e.message}`); }
 }
 const n = rows.length, sum = (k) => rows.reduce((a, r) => a + r[k], 0);
 const summary = {
